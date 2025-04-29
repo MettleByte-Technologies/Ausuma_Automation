@@ -8,96 +8,98 @@ from selenium.webdriver.common.action_chains import ActionChains
 import time
 
 # Function to run the script with user input
-def run_script(account_class, account_type, account_detail_type, account_group, export_option):
-    # Setup Edge driver (make sure msedgedriver is in PATH or specify executable_path)
-    driver = webdriver.Edge()  # Or use executable_path='path_to_msedgedriver' if necessary
-
-    # Maximize the window
+def run_script(account_class, account_type, account_detail_type, account_group, export_option,
+               exclude_zero_balance, from_date, to_date, hide_class, hide_type, hide_detail_type, enable_currency):
+    driver = webdriver.Edge()  # Setup Edge WebDriver
     driver.maximize_window()
-
-    # Open the target URL
     driver.get("https://softwaredevelopmentsolution.com/Accounting/Reports/TrialBalance")
 
-    # Wait until page loads
     wait = WebDriverWait(driver, 20)
 
-    # Login steps
+    # Login
     wait.until(EC.presence_of_element_located((By.ID, "Email"))).send_keys("ola123@yopmail.com")
     wait.until(EC.presence_of_element_located((By.ID, "Password"))).send_keys("1")
     wait.until(EC.element_to_be_clickable((By.ID, "LoginSubmit"))).click()
     print("✅ Logged in successfully")
 
-    # Function to select from Chosen dropdowns
+    # Helper function to select dropdowns
     def select_chosen_dropdown(dropdown_id, value):
-        # Wait for the preloader to disappear (if present)
         wait.until(EC.invisibility_of_element_located((By.CLASS_NAME, "preloader-it")))
-
-        # Wait until the dropdown is visible and click to open it
         dropdown = wait.until(EC.element_to_be_clickable((By.ID, dropdown_id)))
-        dropdown.click()  # Open dropdown
-
-        # Wait until the options list appears and is clickable
+        dropdown.click()
         wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "chosen-results")))
-
-        # Search for the option matching the user input
         options = driver.find_elements(By.XPATH, f"//ul[@class='chosen-results']//li[text()='{value}']")
-
         if options:
-            option = options[0]
-            # Use ActionChains to click on the option, ensuring no obstruction by other elements
-            actions = ActionChains(driver)
-            actions.move_to_element(option).click().perform()
+            ActionChains(driver).move_to_element(options[0]).click().perform()
             print(f"✅ {dropdown_id} selected: {value}")
         else:
-            print(f"❌ Option '{value}' not found in {dropdown_id}. Please check the input.")
-
-        # Close the dropdown by clicking outside (click on the body)
+            print(f"❌ Option '{value}' not found in {dropdown_id}.")
         driver.find_element(By.TAG_NAME, 'body').click()
 
-    # Select Account Class dropdown
+    # Select dropdowns
     select_chosen_dropdown("ddlAccountClass_chosen", account_class)
-
-    # Select Account Type dropdown
     select_chosen_dropdown("ddlAccountType_chosen", account_type)
-
-    # Select Account Detail Type dropdown
     select_chosen_dropdown("ddlAccountDetailType_chosen", account_detail_type)
-
-    # Select Account Group dropdown
     select_chosen_dropdown("ddlAccountGroup_chosen", account_group)
 
-    # Check the "Exclude Zero Balance" checkbox if selected
+    # Set checkboxes
+    if exclude_zero_balance:
+        zero_balance_checkbox = wait.until(EC.element_to_be_clickable((By.ID, "ZeroBalanceAccount")))
+        if not zero_balance_checkbox.is_selected():
+            zero_balance_checkbox.click()
+            print("✅ Exclude Zero Balance checked.")
+    
+    if hide_class:
+        hide_class_checkbox = wait.until(EC.element_to_be_clickable((By.ID, "classGrouping")))
+        if not hide_class_checkbox.is_selected():
+            hide_class_checkbox.click()
+            print("✅ Hide Class checked.")
 
-    # Wait for the "Generate Report" button to be clickable
+    if hide_type:
+        hide_type_checkbox = wait.until(EC.element_to_be_clickable((By.ID, "typeGrouping")))
+        if not hide_type_checkbox.is_selected():
+            hide_type_checkbox.click()
+            print("✅ Hide Type checked.")
+
+    if hide_detail_type:
+        hide_detail_type_checkbox = wait.until(EC.element_to_be_clickable((By.ID, "dtypeGrouping")))
+        if not hide_detail_type_checkbox.is_selected():
+            hide_detail_type_checkbox.click()
+            print("✅ Hide Detail Type checked.")
+
+    if enable_currency:
+        enable_currency_checkbox = wait.until(EC.element_to_be_clickable((By.ID, "EnableCurrency")))
+        if not enable_currency_checkbox.is_selected():
+            enable_currency_checkbox.click()
+            print("✅ Enable Currency checked.")
+
+    # Fill From Date and To Date
+    if from_date:
+        from_date_input = wait.until(EC.presence_of_element_located((By.ID, "FromDate")))
+        from_date_input.clear()
+        from_date_input.send_keys(from_date)
+        print(f"📅 From Date set to {from_date}")
+
+    if to_date:
+        to_date_input = wait.until(EC.presence_of_element_located((By.ID, "ToDate")))
+        to_date_input.clear()
+        to_date_input.send_keys(to_date)
+        print(f"📅 To Date set to {to_date}")
+
+    # Click Generate Report
     generate_btn = wait.until(EC.element_to_be_clickable((By.ID, "submitbtn")))
-
-    # Scroll the "Generate Report" button into view (ensure it's visible)
     driver.execute_script("arguments[0].scrollIntoView(true);", generate_btn)
-
-    # Wait for a moment to make sure the button is fully visible
     time.sleep(2)
+    driver.execute_script("arguments[0].click();", generate_btn)
+    print("📄 Generate Report button clicked.")
+    time.sleep(15)
 
-    # Attempt to click the "Generate Report" button using JavaScript to bypass potential issues
-    try:
-        driver.execute_script("arguments[0].click();", generate_btn)
-        print("📄 Generate Report button clicked.")
-    except Exception as e:
-        print(f"❌ Error clicking the button: {e}")
-
-    # Wait for the report to generate or page to change (Adjust the wait time as needed)
-    time.sleep(15)  # Increase or decrease the time as needed based on your report generation time
-
-    # Now click the Export button to export the report in the desired format (PDF, Excel, or Print)
+    # Export report
     export_btn = wait.until(EC.element_to_be_clickable((By.ID, "exportbtn")))
-
-    # Scroll the "Export" button into view (ensure it's visible)
     driver.execute_script("arguments[0].scrollIntoView(true);", export_btn)
-
-    # Click the Export button to open the dropdown
     export_btn.click()
     print("✅ Export dropdown opened.")
 
-    # Wait for the export options to be clickable and select the user's choice (Pdf, Excel, Print)
     try:
         if export_option == 'Pdf':
             pdf_option = wait.until(EC.element_to_be_clickable((By.XPATH, "//ul[@class='dropdown-menu']//a[text()='Pdf']")))
@@ -114,13 +116,8 @@ def run_script(account_class, account_type, account_detail_type, account_group, 
     except Exception as e:
         print(f"❌ Error with export option: {e}")
 
-    # Wait for the report to export or print (Adjust the wait time as needed)
-    time.sleep(10)  # Adjust this wait time if necessary
-
+    time.sleep(10)
     print("✅ Report export process completed.")
-
-    # Optionally: close the browser after the process
-    # driver.quit()
 
 # Function to open the popup and get user input
 def open_popup():
@@ -129,30 +126,34 @@ def open_popup():
         selected_type = type_var.get()
         selected_detail_type = detail_type_var.get()
         selected_group = group_var.get()
-        export_option = export_var.get()  # Get the selected export option
-        
+        export_option = export_var.get()
+        exclude_zero_balance = exclude_zero_var.get()
+        from_date = from_date_entry.get()
+        to_date = to_date_entry.get()
+        hide_class = hide_class_var.get()
+        hide_type = hide_type_var.get()
+        hide_detail_type = hide_detail_type_var.get()
+        enable_currency = enable_currency_var.get()
+
         if selected_class and selected_type and selected_detail_type and selected_group:
-            run_script(selected_class, selected_type, selected_detail_type, selected_group, export_option)  # Run the Selenium script with the selected values
-            root.quit()  # Close the popup after the script runs
+            run_script(selected_class, selected_type, selected_detail_type, selected_group, export_option,
+                       exclude_zero_balance, from_date, to_date, hide_class, hide_type, hide_detail_type, enable_currency)
+            root.quit()
         else:
             messagebox.showerror("Error", "Please select Account Class, Account Type, Account Detail Type, and Account Group.")
 
-    # Create the main window (popup)
     root = tk.Tk()
     root.title("Select Options")
 
-    # Account Class Dropdown
-    class_label = tk.Label(root, text="Select Account Class:")
-    class_label.pack(padx=10, pady=5)
+    # Account Class
+    tk.Label(root, text="Select Account Class:").pack(padx=10, pady=5)
     class_options = ["All", "Asset", "Expense", "Liability", "Equity", "Revenue"]
     class_var = tk.StringVar(root)
-    class_var.set(class_options[0])  # Set default value
-    class_dropdown = tk.OptionMenu(root, class_var, *class_options)
-    class_dropdown.pack(padx=10, pady=5)
+    class_var.set(class_options[0])
+    tk.OptionMenu(root, class_var, *class_options).pack(padx=10, pady=5)
 
-    # Account Type Dropdown
-    type_label = tk.Label(root, text="Select Account Type:")
-    type_label.pack(padx=10, pady=5)
+    # Account Type
+    tk.Label(root, text="Select Account Type:").pack(padx=10, pady=5)
     type_options = [
         "All", "Intangible Assets", "Current Assets", "Fixed Assets", "Other Assets", "Current Liabilities",
         "Long Term Liabilities", "Owners Equity", "Sales Income", "Other Income", "Direct Cost",
@@ -163,13 +164,11 @@ def open_popup():
         "test", "INCOME 123", "A TEST AT", "ABC TEST AT"
     ]
     type_var = tk.StringVar(root)
-    type_var.set(type_options[0])  # Set default value
-    type_dropdown = tk.OptionMenu(root, type_var, *type_options)
-    type_dropdown.pack(padx=10, pady=5)
+    type_var.set(type_options[0])
+    tk.OptionMenu(root, type_var, *type_options).pack(padx=10, pady=5)
 
-    # Account Detail Type Dropdown
-    detail_type_label = tk.Label(root, text="Select Account Detail Type:")
-    detail_type_label.pack(padx=10, pady=5)
+    # Account Detail Type
+    tk.Label(root, text="Select Account Detail Type:").pack(padx=10, pady=5)
     detail_type_options = [
         "All", "Goodwill", "Cash", "Inventories", "Accounts Receivables", "Advance & PrePayments", "Other Current Asset",
         "Land & Buildings", "Furniture & Fixtures", "Office Equipment & Computers", "Motor Vehicles", "Tools & Machinery",
@@ -185,37 +184,53 @@ def open_popup():
         "Mango", "TEST DT 05-03-2025", "002", "Apple Digital Production", "FINANCIAL INCOME", "TEST DT"
     ]
     detail_type_var = tk.StringVar(root)
-    detail_type_var.set(detail_type_options[0])  # Set default value
-    detail_type_dropdown = tk.OptionMenu(root, detail_type_var, *detail_type_options)
-    detail_type_dropdown.pack(padx=10, pady=5)
+    detail_type_var.set(detail_type_options[0])
+    tk.OptionMenu(root, detail_type_var, *detail_type_options).pack(padx=10, pady=5)
 
-    # Account Group Dropdown
-    group_label = tk.Label(root, text="Select Account Group:")
-    group_label.pack(padx=10, pady=5)
+    # Account Group
+    tk.Label(root, text="Select Account Group:").pack(padx=10, pady=5)
     group_options = [
         "All", "Expenses", "Purchase Expense", "Liability", "current", "saving", "Show", "Cost of Goods Sold", "Financial Groups",
         "Financial Groups1", "Acc Group", "Cost of Goods Sold Group", "Test Edit Groups", "TEST GROUP AUSUMA", "GST GROUP 03-02-2025"
     ]
     group_var = tk.StringVar(root)
-    group_var.set(group_options[0])  # Set default value
-    group_dropdown = tk.OptionMenu(root, group_var, *group_options)
-    group_dropdown.pack(padx=10, pady=5)
+    group_var.set(group_options[0])
+    tk.OptionMenu(root, group_var, *group_options).pack(padx=10, pady=5)
 
-    # Export Option Dropdown
-    export_label = tk.Label(root, text="Select Export Option:")
-    export_label.pack(padx=10, pady=5)
+    # New Fields after Account Group
+    exclude_zero_var = tk.BooleanVar()
+    tk.Checkbutton(root, text="Exclude Zero Balance", variable=exclude_zero_var).pack(padx=10, pady=5)
+
+    tk.Label(root, text="From Date (DD-MM-YYYY):").pack(padx=10, pady=5)
+    from_date_entry = tk.Entry(root)
+    from_date_entry.pack(padx=10, pady=5)
+
+    tk.Label(root, text="To Date (DD-MM-YYYY):").pack(padx=10, pady=5)
+    to_date_entry = tk.Entry(root)
+    to_date_entry.pack(padx=10, pady=5)
+
+    hide_class_var = tk.BooleanVar()
+    tk.Checkbutton(root, text="Hide Class", variable=hide_class_var).pack(padx=10, pady=5)
+
+    hide_type_var = tk.BooleanVar()
+    tk.Checkbutton(root, text="Hide Type", variable=hide_type_var).pack(padx=10, pady=5)
+
+    hide_detail_type_var = tk.BooleanVar()
+    tk.Checkbutton(root, text="Hide Detail Type", variable=hide_detail_type_var).pack(padx=10, pady=5)
+
+    enable_currency_var = tk.BooleanVar()
+    tk.Checkbutton(root, text="Enable Currency", variable=enable_currency_var).pack(padx=10, pady=5)
+
+    # Export Option
+    tk.Label(root, text="Select Export Option:").pack(padx=10, pady=5)
     export_options = ["Pdf", "Excel", "Print"]
     export_var = tk.StringVar(root)
-    export_var.set(export_options[0])  # Set default value
-    export_dropdown = tk.OptionMenu(root, export_var, *export_options)
-    export_dropdown.pack(padx=10, pady=5)
+    export_var.set(export_options[0])
+    tk.OptionMenu(root, export_var, *export_options).pack(padx=10, pady=5)
 
-    # Submit Button
-    submit_btn = tk.Button(root, text="Run Script", command=on_button_click)
-    submit_btn.pack(pady=10)
+    tk.Button(root, text="Run Script", command=on_button_click).pack(pady=10)
 
-    # Run the main loop
     root.mainloop()
 
-# Call the function to open the popup
+# Run the popup
 open_popup()
