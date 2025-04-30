@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox
+from tkinter.ttk import Combobox
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -8,7 +9,7 @@ from selenium.webdriver.common.action_chains import ActionChains
 import time
 
 # Function to run the script with user input
-def run_script(account_class, account_type, account_detail_type, account_group, export_option,
+def run_script(account_class, account_type, account_detail_type, account_group, export_format,
                exclude_zero_balance, from_date, to_date, hide_class, hide_type, hide_detail_type, enable_currency):
     driver = webdriver.Edge()  # Setup Edge WebDriver
     driver.maximize_window()
@@ -95,28 +96,13 @@ def run_script(account_class, account_type, account_detail_type, account_group, 
     time.sleep(15)
 
     # Export report
-    export_btn = wait.until(EC.element_to_be_clickable((By.ID, "exportbtn")))
-    driver.execute_script("arguments[0].scrollIntoView(true);", export_btn)
-    export_btn.click()
-    print("✅ Export dropdown opened.")
-
-    try:
-        if export_option == 'Pdf':
-            pdf_option = wait.until(EC.element_to_be_clickable((By.XPATH, "//ul[@class='dropdown-menu']//a[text()='Pdf']")))
-            pdf_option.click()
-            print("✅ Exporting as PDF.")
-        elif export_option == 'Excel':
-            excel_option = wait.until(EC.element_to_be_clickable((By.XPATH, "//ul[@class='dropdown-menu']//a[text()='Excel']")))
-            excel_option.click()
-            print("✅ Exporting as Excel.")
-        elif export_option == 'Print':
-            print_option = wait.until(EC.element_to_be_clickable((By.XPATH, "//ul[@class='dropdown-menu']//a[text()='Print']")))
-            print_option.click()
-            print("✅ Printing report.")
-    except Exception as e:
-        print(f"❌ Error with export option: {e}")
-
+    if export_format.lower() in ["pdf", "excel", "print"]:
+        driver.execute_script(f"GenerateReport('{export_format.capitalize()}')")
+        print(f"✅ Exported as {export_format.capitalize()}")
+    else:
+        print("⚠️ Invalid export format selected.")
     time.sleep(10)
+
     print("✅ Report export process completed.")
 
 # Function to open the popup and get user input
@@ -126,7 +112,7 @@ def open_popup():
         selected_type = type_var.get()
         selected_detail_type = detail_type_var.get()
         selected_group = group_var.get()
-        export_option = export_var.get()
+        export_format = export_var.get()
         exclude_zero_balance = exclude_zero_var.get()
         from_date = from_date_entry.get()
         to_date = to_date_entry.get()
@@ -136,11 +122,11 @@ def open_popup():
         enable_currency = enable_currency_var.get()
 
         if selected_class and selected_type and selected_detail_type and selected_group:
-            run_script(selected_class, selected_type, selected_detail_type, selected_group, export_option,
+            run_script(selected_class, selected_type, selected_detail_type, selected_group, export_format,
                        exclude_zero_balance, from_date, to_date, hide_class, hide_type, hide_detail_type, enable_currency)
             root.quit()
         else:
-            messagebox.showerror("Error", "Please select Account Class, Account Type, Account Detail Type, and Account Group.")
+            messagebox.showerror("Error", "Please select all required fields.")
 
     root = tk.Tk()
     root.title("Select Options")
@@ -197,7 +183,7 @@ def open_popup():
     group_var.set(group_options[0])
     tk.OptionMenu(root, group_var, *group_options).pack(padx=10, pady=5)
 
-    # New Fields after Account Group
+    # Checkboxes and Date Inputs
     exclude_zero_var = tk.BooleanVar()
     tk.Checkbutton(root, text="Exclude Zero Balance", variable=exclude_zero_var).pack(padx=10, pady=5)
 
@@ -222,11 +208,11 @@ def open_popup():
     tk.Checkbutton(root, text="Enable Currency", variable=enable_currency_var).pack(padx=10, pady=5)
 
     # Export Option
-    tk.Label(root, text="Select Export Option:").pack(padx=10, pady=5)
-    export_options = ["Pdf", "Excel", "Print"]
-    export_var = tk.StringVar(root)
-    export_var.set(export_options[0])
-    tk.OptionMenu(root, export_var, *export_options).pack(padx=10, pady=5)
+    tk.Label(root, text="Export Format:").pack(padx=10, pady=5)
+    export_var = tk.StringVar()
+    export_dropdown = Combobox(root, textvariable=export_var, values=["Pdf", "Excel", "Print"], state="readonly")
+    export_dropdown.pack(padx=10, pady=5)
+    export_dropdown.set("Pdf")
 
     tk.Button(root, text="Run Script", command=on_button_click).pack(pady=10)
 
