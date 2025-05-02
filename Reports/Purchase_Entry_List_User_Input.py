@@ -9,7 +9,7 @@ from selenium.webdriver.support import expected_conditions as EC
 # Step 1: Tkinter Popup for Inputs
 def get_user_input():
     root = tk.Tk()
-    root.title("Journal Entry List Inputs")
+    root.title("Purchase Entry List Inputs")
 
     # From Date
     tk.Label(root, text="From Date (MM/DD/YYYY):").grid(row=0, column=0, padx=10, pady=5)
@@ -24,11 +24,11 @@ def get_user_input():
     # Document No Dropdown
     tk.Label(root, text="Document No:").grid(row=2, column=0, padx=10, pady=5)
     doc_no_dropdown = ttk.Combobox(root, values=[
-        "JE000006", "JE000007", "JE000008", "JE000009", "JE000010",
-        "JEN000012", "JEN000013", "JEN000014", "JEN000015", "JEN000016"
+        "PEN000006", "PEN000007", "PEN000008", "PEN000009", "PEN000010",
+        "PEN000012", "PEN000013", "PEN000014", "PEN000015", "PEN000016"
     ])
     doc_no_dropdown.grid(row=2, column=1, padx=10, pady=5)
-    doc_no_dropdown.set("JE000006")
+    doc_no_dropdown.set("PEN000006")
 
     # Export Option
     tk.Label(root, text="Export Option:").grid(row=3, column=0, padx=10, pady=5)
@@ -49,7 +49,7 @@ def automate_report(from_date, to_date, doc_no, export_option):
     driver = webdriver.Edge()
     wait = WebDriverWait(driver, 20)
     driver.maximize_window()
-    driver.get("https://softwaredevelopmentsolution.com/Accounting/Reports/JournalEntryList")
+    driver.get("https://softwaredevelopmentsolution.com/Accounting/Reports/PurchaseEntryList")
 
     # Login
     wait.until(EC.presence_of_element_located((By.ID, "Email"))).send_keys("ola123@yopmail.com")
@@ -75,8 +75,8 @@ def automate_report(from_date, to_date, doc_no, export_option):
 
     # Call SearchDocument directly
     try:
-        driver.execute_script("SearchDocument('JE')")
-        print("📥 SearchDocument('JE') called")
+        driver.execute_script("SearchDocument('PE')")
+        print("📥 SearchDocument('PE') called")
         time.sleep(2)
     except Exception as e:
         print(f"❌ Error in calling SearchDocument: {e}")
