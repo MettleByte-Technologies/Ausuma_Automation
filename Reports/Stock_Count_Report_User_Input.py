@@ -27,7 +27,7 @@ export_options = ["Pdf", "Excel", "Print"]
 # Global selections
 selected_product = None
 selected_location = None
-selected_location_bin = None
+selected_location_bin = None    
 selected_export = None
 
 # Tkinter popup
