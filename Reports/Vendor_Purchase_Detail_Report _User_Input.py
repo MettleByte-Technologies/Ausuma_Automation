@@ -24,11 +24,13 @@ EXPORT_OPTIONS = ["Pdf", "Excel", "Print"]
 
 def get_user_inputs():
     def submit():
-        nonlocal selected_vendor, from_date, to_date, enable_currency, export_format
+        nonlocal selected_vendor, from_date, to_date, enable_currency, include_returns, exclude_fully_returned, export_format
         selected_vendor = vendor_combo.get()
         from_date = from_entry.get()
         to_date = to_entry.get()
         enable_currency = currency_var.get()
+        include_returns = returns_var.get()
+        exclude_fully_returned = exclude_returns_var.get()
         export_format = export_combo.get()
         root.destroy()
 
@@ -36,10 +38,18 @@ def get_user_inputs():
     from_date = None
     to_date = None
     enable_currency = None
+    include_returns = None
+    exclude_fully_returned = None
     export_format = None
 
     root = tk.Tk()
     root.title("Open Purchase Order - Input")
+
+    returns_var = tk.BooleanVar()
+    tk.Checkbutton(root, text="Include Returns?", variable=returns_var).pack(pady=5)
+
+    exclude_returns_var = tk.BooleanVar()
+    tk.Checkbutton(root, text="Exclude Fully Returned Invoices?", variable=exclude_returns_var).pack(pady=5)
 
     tk.Label(root, text="Choose Vendor:").pack(pady=5)
     vendor_combo = ttk.Combobox(root, values=list(VENDOR_OPTIONS.keys()), state="readonly", width=50)
@@ -65,15 +75,15 @@ def get_user_inputs():
     tk.Button(root, text="Submit", command=submit).pack(pady=10)
     root.mainloop()
 
-    return selected_vendor, from_date, to_date, enable_currency, export_format
+    return selected_vendor, from_date, to_date, enable_currency, include_returns, exclude_fully_returned, export_format
 
 def run_automation():
-    selected_vendor, from_date, to_date, enable_currency, selected_export = get_user_inputs()
+    selected_vendor, from_date, to_date, enable_currency, include_returns, exclude_fully_returned, selected_export = get_user_inputs()
 
     driver = webdriver.Edge()
     wait = WebDriverWait(driver, 20)
     driver.maximize_window()
-    driver.get("https://softwaredevelopmentsolution.com/Purchase/Reports/OpenPurchaseOrder")
+    driver.get("https://softwaredevelopmentsolution.com/Purchase/Reports/VendorPurchaseDetail")
 
     # Login
     wait.until(EC.presence_of_element_located((By.ID, "Email"))).send_keys("ola123@yopmail.com")
@@ -81,6 +91,16 @@ def run_automation():
     wait.until(EC.element_to_be_clickable((By.ID, "LoginSubmit"))).click()
 
     wait.until(EC.invisibility_of_element_located((By.CLASS_NAME, "preloader-it")))
+
+    # Include Returns checkbox
+    include_returns_checkbox = wait.until(EC.presence_of_element_located((By.ID, "includeReturns")))
+    if include_returns != include_returns_checkbox.is_selected():
+        include_returns_checkbox.click()
+    time.sleep(2)
+    # Exclude Fully Returned Invoices checkbox
+    exclude_returns_checkbox = wait.until(EC.presence_of_element_located((By.ID, "excludeFullyReturnedInvoice")))
+    if exclude_fully_returned != exclude_returns_checkbox.is_selected():
+        exclude_returns_checkbox.click()
 
     # Vendor dropdown
     wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "div.btn-group.bootstrap-select button"))).click()
@@ -109,8 +129,7 @@ def run_automation():
     time.sleep(3)
 
     # Export dropdown
-    export_btn = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[contains(., 'Export')]")))
-    export_btn.click()
+    export_btn = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[contains(., 'Export')]"))).click()
     print("✅ Export menu opened")
 
     # Select export option

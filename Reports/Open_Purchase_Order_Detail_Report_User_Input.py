@@ -73,7 +73,7 @@ def run_automation():
     driver = webdriver.Edge()
     wait = WebDriverWait(driver, 20)
     driver.maximize_window()
-    driver.get("https://softwaredevelopmentsolution.com/Purchase/Reports/OpenPurchaseOrder")
+    driver.get("https://softwaredevelopmentsolution.com/Purchase/Reports/OpenPurchaseOrderDetail")
 
     # Login
     wait.until(EC.presence_of_element_located((By.ID, "Email"))).send_keys("ola123@yopmail.com")
